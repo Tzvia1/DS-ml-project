@@ -41,6 +41,7 @@ DS-ml-project/
 | 3.3 | market (16% null) | Fill with "Unknown" |
 | 3.4 | country_code / state_code | Fill with "Unknown"; create geo_cluster feature |
 | 4 | Outliers / log transform | All funding amounts → log1p; keep originals |
+| 4.1 | secondary_market deep-dive | Very sparse (<5% non-zero); zero = no activity (not missing); stronger signal in acquired |
 | 5 | Funding rounds | has_round_A/B/C binary flags; round_D_plus = sum of D–H |
 | 6 | Funding timeline | days_to_first_funding (founded_at → first_funding_at) |
 | 7 | Target encoding | market + country_code → acquisition/closure rate encoding |
@@ -86,6 +87,7 @@ Each RQ follows: **H0/H1 → Analysis code → Written Conclusion**
 | 4 | `GeoClusterCreator` | §3.4 | Creates geo_cluster (SiliconValley/NY/Boston/Seattle/LA/USA-Other/country/Unknown) |
 | 5 | `FundingLogTransformer` | §4 | log1p on all 14 funding amount columns; adds log_ prefix cols |
 | 6 | `RoundBinarizer` | §5 | has_round_A/B/C binary flags; round_D_plus = sum of D–H; drops round_D through round_H |
+| 7 | `AngelFlagCreator` | RQ4 | had_angel = (angel > 0) binary flag |
 | 7 | `FundingTimelineCalculator` | §6 | days_to_first_funding; median-imputes nulls |
 | 8 | `TargetEncoder` | §7 | Encodes market + country_code → 4 numeric cols; drops originals |
 | 9 | `DateMedianImputer` | §3.2 | Median-imputes remaining founded_year/month/quarter nulls |
@@ -113,9 +115,10 @@ Each RQ follows: **H0/H1 → Analysis code → Written Conclusion**
 
 - [ ] `04_Modeling.ipynb` — train Logistic Regression, Random Forest, XGBoost with `class_weight='balanced'`
 - [ ] `05_Evaluation.ipynb` — confusion matrices, classification report, feature importance, final comparison
-- [ ] Consider adding `had_angel` binary flag to pipeline (suggested by RQ4)
+- [x] `had_angel` binary flag added to pipeline as step 7 (`AngelFlagCreator`) — **re-run 03_Preprocessing.ipynb to regenerate CSVs (45 → 46 features)**
 - [ ] Consider adding `founding_era` categorical feature to pipeline (suggested by RQ6)
 - [ ] Research remaining nulls after pipeline (null research cells added to section 4 of 03_Preprocessing)
+- [x] `secondary_market` discussed and Section 4.1 added to 01_EDA.ipynb (sparsity analysis + outcome relationship)
 - [ ] Commit work on `feature/restructure-notebooks` branch
 
 ---

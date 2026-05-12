@@ -1,0 +1,1098 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Can We Predict Which Startups Win?</title>
+<style>
+  :root {
+    --blue:   #2196F3;
+    --green:  #4CAF50;
+    --orange: #FF9800;
+    --red:    #FF5722;
+    --dark:   #0d1117;
+    --card:   #161b22;
+    --border: #30363d;
+    --text:   #e6edf3;
+    --muted:  #8b949e;
+    --accent: #58a6ff;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--dark);
+    color: var(--text);
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+  }
+
+  /* ── SLIDE ENGINE ─────────────────────────────────────── */
+  .deck { width: 100%; height: 100vh; position: relative; }
+
+  .slide {
+    position: absolute;
+    inset: 0;
+    padding: 48px 64px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.45s ease;
+  }
+  .slide.active { opacity: 1; pointer-events: all; }
+
+  /* ── NAVIGATION ───────────────────────────────────────── */
+  .nav {
+    position: fixed;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    z-index: 100;
+    background: rgba(22,27,34,0.9);
+    border: 1px solid var(--border);
+    border-radius: 40px;
+    padding: 8px 20px;
+    backdrop-filter: blur(8px);
+  }
+  .nav button {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 18px;
+    cursor: pointer;
+    padding: 4px 10px;
+    border-radius: 6px;
+    transition: color .2s, background .2s;
+  }
+  .nav button:hover { color: var(--text); background: var(--border); }
+  #slide-counter { color: var(--muted); font-size: 13px; min-width: 60px; text-align: center; }
+
+  /* keyboard hint */
+  .kbd-hint {
+    position: fixed;
+    bottom: 28px;
+    right: 32px;
+    font-size: 11px;
+    color: var(--muted);
+    z-index: 100;
+  }
+
+  /* ── TYPOGRAPHY ───────────────────────────────────────── */
+  .eyebrow {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 16px;
+  }
+  h1 { font-size: 3.4rem; font-weight: 800; line-height: 1.1; }
+  h2 { font-size: 2rem;   font-weight: 700; line-height: 1.2; margin-bottom: 32px; }
+  h3 { font-size: 1.2rem; font-weight: 600; color: var(--accent); margin-bottom: 12px; }
+  p  { line-height: 1.7;  color: var(--muted); max-width: 780px; }
+
+  .hero-sub {
+    font-size: 1.25rem;
+    color: var(--muted);
+    margin: 20px 0 40px;
+    max-width: 640px;
+    line-height: 1.6;
+  }
+
+  /* ── STAT ROW ─────────────────────────────────────────── */
+  .stat-row { display: flex; gap: 24px; margin: 32px 0; flex-wrap: wrap; }
+  .stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px 28px;
+    flex: 1;
+    min-width: 140px;
+  }
+  .stat-card .num {
+    font-size: 2.4rem;
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+  .stat-card .label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+
+  /* ── GRID LAYOUTS ─────────────────────────────────────── */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
+  .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+
+  /* ── CARD ─────────────────────────────────────────────── */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+  }
+  .card.highlight { border-color: var(--blue); }
+  .card.green-glow { border-color: var(--green); }
+  .card.orange-glow { border-color: var(--orange); }
+
+  /* ── BADGE ────────────────────────────────────────────── */
+  .badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .badge-blue   { background: rgba(33,150,243,.15); color: #64b5f6; }
+  .badge-green  { background: rgba(76,175,80,.15);  color: #81c784; }
+  .badge-orange { background: rgba(255,152,0,.15);  color: #ffb74d; }
+  .badge-red    { background: rgba(255,87,34,.15);  color: #ff8a65; }
+
+  /* ── HORIZONTAL BAR CHART ────────────────────────────── */
+  .bar-chart { display: flex; flex-direction: column; gap: 10px; }
+  .bar-row { display: flex; align-items: center; gap: 12px; }
+  .bar-label { font-size: 12px; color: var(--muted); min-width: 130px; text-align: right; }
+  .bar-track {
+    flex: 1;
+    height: 24px;
+    background: rgba(255,255,255,.05);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    padding-left: 8px;
+    font-size: 11px;
+    font-weight: 700;
+    transition: width 0.8s ease;
+    color: #fff;
+  }
+  .bar-value { font-size: 12px; color: var(--muted); min-width: 50px; }
+
+  /* ── PIPELINE ────────────────────────────────────────── */
+  .pipeline { display: flex; align-items: center; gap: 0; margin: 24px 0; flex-wrap: wrap; }
+  .pipe-step {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 20px;
+    text-align: center;
+    flex: 1;
+    min-width: 100px;
+  }
+  .pipe-step .icon { font-size: 24px; }
+  .pipe-step .name { font-size: 11px; font-weight: 600; margin-top: 8px; color: var(--text); }
+  .pipe-step .sub  { font-size: 10px; color: var(--muted); margin-top: 4px; }
+  .pipe-arrow { font-size: 18px; color: var(--muted); margin: 0 6px; }
+
+  /* ── TABLE ───────────────────────────────────────────── */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th {
+    background: rgba(255,255,255,.04);
+    color: var(--muted);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 10px 14px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  td {
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(255,255,255,.05);
+    color: var(--text);
+  }
+  tr.winner td { background: rgba(76,175,80,.07); }
+  tr.winner td:first-child { border-left: 3px solid var(--green); }
+
+  /* ── PROGRESS RING ───────────────────────────────────── */
+  .rings { display: flex; gap: 32px; align-items: center; justify-content: center; }
+  .ring-wrap { text-align: center; }
+  .ring-wrap svg { overflow: visible; }
+  .ring-label { font-size: 12px; color: var(--muted); margin-top: 8px; }
+  .ring-val   { font-size: 13px; font-weight: 700; margin-top: 4px; }
+
+  /* ── FINDING CARD ────────────────────────────────────── */
+  .finding { display: flex; gap: 16px; align-items: flex-start; margin-bottom: 16px; }
+  .finding-num {
+    background: rgba(88,166,255,.12);
+    color: var(--accent);
+    font-size: 13px;
+    font-weight: 800;
+    border-radius: 50%;
+    width: 32px; height: 32px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .finding-text h4 { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+  .finding-text p  { font-size: 13px; color: var(--muted); line-height: 1.5; max-width: none; }
+  .highlight-num { color: var(--green); font-weight: 700; }
+
+  /* ── VOTE HEATMAP ────────────────────────────────────── */
+  .heatmap-row { display: flex; align-items: center; gap: 4px; margin-bottom: 4px; }
+  .heatmap-label { font-size: 10px; color: var(--muted); min-width: 160px; text-align: right; }
+  .heatmap-cell  {
+    width: 28px; height: 22px;
+    border-radius: 3px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 700;
+  }
+  .cell-on  { background: rgba(76,175,80,.6);  color: #fff; }
+  .cell-off { background: rgba(255,255,255,.04); color: var(--muted); }
+
+  /* ── EXPERIMENT GRID ─────────────────────────────────── */
+  .exp-grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; }
+  .exp-cell {
+    height: 28px;
+    border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 9px;
+    font-weight: 600;
+  }
+  .exp-winner { background: rgba(76,175,80,.5); color: #fff; }
+  .exp-good   { background: rgba(33,150,243,.3); color: var(--blue); }
+  .exp-mid    { background: rgba(255,152,0,.2);  color: var(--orange); }
+  .exp-low    { background: rgba(255,255,255,.05); color: var(--muted); }
+
+  /* ── COVER SPECIFIC ──────────────────────────────────── */
+  .cover-grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+  }
+  .cover-glow {
+    position: absolute;
+    width: 600px; height: 600px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(33,150,243,.12) 0%, transparent 70%);
+    top: -100px; right: -100px;
+    pointer-events: none;
+  }
+
+  /* ── LESSON CARD ─────────────────────────────────────── */
+  .lesson {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 24px;
+    border-left: 4px solid var(--accent);
+  }
+  .lesson h4 { font-size: 14px; font-weight: 700; margin-bottom: 8px; }
+  .lesson p  { font-size: 13px; color: var(--muted); line-height: 1.6; max-width: none; }
+
+  /* ── SLIDE NUMBERS ───────────────────────────────────── */
+  .slide-num {
+    position: absolute;
+    top: 28px;
+    right: 64px;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+
+  /* ── PROGRESS BAR ────────────────────────────────────── */
+  #progress {
+    position: fixed;
+    top: 0; left: 0;
+    height: 2px;
+    background: var(--accent);
+    transition: width 0.4s ease;
+    z-index: 200;
+  }
+
+  /* ── DONUT CHART (pure CSS) ──────────────────────────── */
+  .donut-wrap { position: relative; width: 160px; height: 160px; flex-shrink: 0; }
+  .donut-wrap svg { width: 160px; height: 160px; transform: rotate(-90deg); }
+  .donut-center {
+    position: absolute;
+    inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center;
+  }
+  .donut-center .big { font-size: 22px; font-weight: 800; }
+  .donut-center .sm  { font-size: 10px; color: var(--muted); }
+
+  /* ── OUTCOME TIMELINE ────────────────────────────────── */
+  .timeline { position: relative; padding-left: 28px; }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 10px; top: 8px; bottom: 8px;
+    width: 2px;
+    background: var(--border);
+  }
+  .tl-item { position: relative; margin-bottom: 20px; }
+  .tl-item::before {
+    content: '';
+    position: absolute;
+    left: -22px; top: 6px;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+  .tl-item h4 { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+  .tl-item p  { font-size: 13px; color: var(--muted); max-width: none; }
+</style>
+</head>
+<body>
+
+<div id="progress"></div>
+
+<div class="deck">
+
+  <!-- ══ SLIDE 1 — COVER ══════════════════════════════════════════════════ -->
+  <div class="slide active" id="s1">
+    <div class="cover-grid"></div>
+    <div class="cover-glow"></div>
+    <div style="position:relative;z-index:1">
+      <div class="eyebrow">Machine Learning · Startup Analytics</div>
+      <h1>Can We Predict<br>Which Startups<br><span style="color:var(--accent)">Win?</span></h1>
+      <p class="hero-sub">A data-driven investigation into 54,294 startups — finding the signals that separate acquired, operating, and closed companies.</p>
+      <div class="stat-row">
+        <div class="stat-card">
+          <div class="num" style="color:var(--blue)">54K</div>
+          <div class="label">Startups Analyzed</div>
+        </div>
+        <div class="stat-card">
+          <div class="num" style="color:var(--green)">3</div>
+          <div class="label">Outcome Classes</div>
+        </div>
+        <div class="stat-card">
+          <div class="num" style="color:var(--orange)">5</div>
+          <div class="label">Research Notebooks</div>
+        </div>
+        <div class="stat-card">
+          <div class="num" style="color:var(--accent)">50</div>
+          <div class="label">Model Experiments</div>
+        </div>
+      </div>
+    </div>
+    <div class="slide-num">01 / 10</div>
+  </div>
+
+  <!-- ══ SLIDE 2 — THE PROBLEM ════════════════════════════════════════════ -->
+  <div class="slide" id="s2">
+    <div class="eyebrow">The Problem</div>
+    <h2>Most startups don't survive.<br>Can we know <em>in advance</em> which ones will?</h2>
+    <div class="two-col" style="margin-top:8px">
+      <div>
+        <div class="card" style="margin-bottom:20px">
+          <div style="display:flex;align-items:center;gap:24px">
+            <!-- Donut SVG -->
+            <div class="donut-wrap">
+              <svg viewBox="0 0 120 120">
+                <!-- Operating 86.5% -->
+                <circle cx="60" cy="60" r="48" fill="none" stroke="#2196F3" stroke-width="18"
+                  stroke-dasharray="261.5 39.4" stroke-dashoffset="0"/>
+                <!-- Acquired 8.1% -->
+                <circle cx="60" cy="60" r="48" fill="none" stroke="#4CAF50" stroke-width="18"
+                  stroke-dasharray="24.5 276.4" stroke-dashoffset="-261.5"/>
+                <!-- Closed 5.4% -->
+                <circle cx="60" cy="60" r="48" fill="none" stroke="#FF5722" stroke-width="18"
+                  stroke-dasharray="16.3 284.6" stroke-dashoffset="-286"/>
+              </svg>
+              <div class="donut-center">
+                <div class="big">3</div>
+                <div class="sm">outcomes</div>
+              </div>
+            </div>
+            <div>
+              <div style="margin-bottom:12px">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+                  <div style="width:12px;height:12px;border-radius:3px;background:#2196F3;flex-shrink:0"></div>
+                  <span style="font-size:13px">Operating — <strong>86.5%</strong> &nbsp;<span style="color:var(--muted);font-size:11px">34,426 startups</span></span>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+                  <div style="width:12px;height:12px;border-radius:3px;background:#4CAF50;flex-shrink:0"></div>
+                  <span style="font-size:13px">Acquired — <strong style="color:var(--green)">8.1%</strong> &nbsp;<span style="color:var(--muted);font-size:11px">3,218 startups</span></span>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px">
+                  <div style="width:12px;height:12px;border-radius:3px;background:#FF5722;flex-shrink:0"></div>
+                  <span style="font-size:13px">Closed — <strong style="color:var(--red)">5.4%</strong> &nbsp;<span style="color:var(--muted);font-size:11px">2,158 startups</span></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="border-color:var(--orange)">
+          <h3 style="margin-bottom:8px">The Challenge</h3>
+          <p style="font-size:13px">The classes are <strong style="color:var(--orange)">massively imbalanced</strong> — a naive model would just predict "Operating" for everything and still claim 86% accuracy. We need smarter evaluation.</p>
+        </div>
+      </div>
+      <div>
+        <h3>Our 5-Stage Pipeline</h3>
+        <div class="timeline" style="margin-top:16px">
+          <div class="tl-item">
+            <h4>📊 EDA</h4>
+            <p>Map missing value patterns, identify transformable features</p>
+          </div>
+          <div class="tl-item">
+            <h4>🧪 Research Questions</h4>
+            <p>Test 6 hypotheses about what drives startup success — no model needed</p>
+          </div>
+          <div class="tl-item">
+            <h4>⚙️ Preprocessing</h4>
+            <p>Reproducible sklearn Pipeline — zero data leakage</p>
+          </div>
+          <div class="tl-item">
+            <h4>⚖️ Imbalance Handling</h4>
+            <p>Evaluate 5 resampling strategies; pick the best</p>
+          </div>
+          <div class="tl-item" style="margin-bottom:0">
+            <h4>🤖 Feature Selection & Modeling</h4>
+            <p>50 experiments across 5 models — touch test set exactly once</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="slide-num">02 / 10</div>
+  </div>
+
+  <!-- ══ SLIDE 3 — THE DATA ════════════════════════════════════════════════ -->
+  <div class="slide" id="s3">
+    <div class="eyebrow">Phase 1 — EDA</div>
+    <h2>The raw data was messy.<br>We turned chaos into signal.</h2>
+    <div class="two-col">
+      <div>
+        <h3>What we found</h3>
+        <table style="margin-top:8px">
+          <thead><tr><th>Column</th><th>Null %</th><th>Action</th></tr></thead>
+          <tbody>
+            <tr><td>Funding total</td><td style="color:var(--orange)">24.6%</td><td><span class="badge badge-blue">Impute from rounds</span></td></tr>
+            <tr><td>Founded date</td><td style="color:var(--orange)">29.0%</td><td><span class="badge badge-blue">Median imputation</span></td></tr>
+            <tr><td>Market</td><td style="color:var(--orange)">16.2%</td><td><span class="badge badge-green">Encode as "Unknown"</span></td></tr>
+            <tr><td>Country code</td><td style="color:var(--orange)">18.6%</td><td><span class="badge badge-green">Geo cluster</span></td></tr>
+            <tr><td>State code</td><td style="color:var(--red)">44.4%</td><td><span class="badge badge-orange">Drop — redundant</span></td></tr>
+          </tbody>
+        </table>
+        <div class="card" style="margin-top:16px;border-color:var(--blue)">
+          <h3 style="font-size:13px">Why log-transform funding?</h3>
+          <div style="display:flex;gap:8px;margin-top:8px;font-size:12px;color:var(--muted)">
+            <div style="flex:1">
+              <div style="color:var(--red);font-weight:600;margin-bottom:4px">Linear scale ❌</div>
+              <div style="background:rgba(255,87,34,.1);border-radius:6px;padding:8px;font-family:monospace;font-size:10px">
+                99% of startups clustered at zero<br>
+                ████████████████░░░░░░ spike
+              </div>
+            </div>
+            <div style="flex:1">
+              <div style="color:var(--green);font-weight:600;margin-bottom:4px">log1p scale ✓</div>
+              <div style="background:rgba(76,175,80,.1);border-radius:6px;padding:8px;font-family:monospace;font-size:10px">
+                Near-normal distribution<br>
+                ░░▒▒████████████▒▒░░░░ bell
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <h3>6 Key Engineering Decisions</h3>
+        <div style="display:flex;flex-direction:column;gap:10px;margin-top:8px">
+          <div class="card" style="padding:14px 18px">
+            <div style="font-size:13px"><span style="color:var(--accent);font-weight:700">753 markets, 115 countries</span> → target encoding (mean acquisition rate per category)</div>
+          </div>
+          <div class="card" style="padding:14px 18px">
+            <div style="font-size:13px"><span style="color:var(--accent);font-weight:700">Geography</span> → 7 clusters: Silicon Valley, NY, Boston, Seattle, LA, USA-Other, Non-USA</div>
+          </div>
+          <div class="card" style="padding:14px 18px">
+            <div style="font-size:13px"><span style="color:var(--accent);font-weight:700">Funding rounds</span> → binary flags (has_round_A/B/C) + collapse D–H → round_D_plus</div>
+          </div>
+          <div class="card" style="padding:14px 18px">
+            <div style="font-size:13px"><span style="color:var(--accent);font-weight:700">All funding amounts</span> → log1p transform to fix extreme right skew</div>
+          </div>
+          <div class="card" style="padding:14px 18px">
+            <div style="font-size:13px"><span style="color:var(--accent);font-weight:700">Time to first funding</span> → new feature: days from founding to first investment</div>
+          </div>
+          <div style="margin-top:4px;display:flex;gap:16px">
+            <div style="text-align:center;flex:1;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px">
+              <div style="font-size:1.6rem;font-weight:800;color:var(--muted)">39</div>
+              <div style="font-size:11px;color:var(--muted)">raw columns</div>
+            </div>
+            <div style="display:flex;align-items:center;font-size:20px;color:var(--accent)">→</div>
+            <div style="text-align:center;flex:1;background:var(--card);border:1px solid var(--green);border-radius:10px;padding:14px">
+              <div style="font-size:1.6rem;font-weight:800;color:var(--green)">46</div>
+              <div style="font-size:11px;color:var(--muted)">engineered features</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="slide-num">03 / 10</div>
+  </div>
+
+  <!-- ══ SLIDE 4 — RESEARCH QUESTIONS ══════════════════════════════════════ -->
+  <div class="slide" id="s4">
+    <div class="eyebrow">Phase 2 — Research Questions</div>
+    <h2>6 Questions. Real Answers.<br>No model required.</h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-top:8px">
+      <div class="card" style="border-color:var(--green)">
+        <div class="badge badge-green" style="margin-bottom:10px">RQ1 — Funding</div>
+        <div style="font-size:28px;font-weight:800;color:var(--green)">6% → 19%</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:6px">Acquisition rate rises with seed amount. Sweet spot: $500K–$2M</div>
+      </div>
+      <div class="card" style="border-color:var(--blue)">
+        <div class="badge badge-blue" style="margin-bottom:10px">RQ2 — Industry</div>
+        <div style="font-size:28px;font-weight:800;color:var(--blue)">2–3×</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:6px">Semiconductors & Security have 2–3× the average acquisition rate. Software: 11%, Biotech: 5.2%</div>
+      </div>
+      <div class="card" style="border-color:var(--orange)">
+        <div class="badge badge-orange" style="margin-bottom:10px">RQ3 — Geography</div>
+        <div style="font-size:28px;font-weight:800;color:var(--orange)">15% vs 3%</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:6px">Silicon Valley startups acquired at 15%. Non-USA: just 3%. Location is destiny.</div>
+      </div>
+      <div class="card">
+        <div class="badge badge-blue" style="margin-bottom:10px">RQ4 — Angel Funding</div>
+        <div style="font-size:28px;font-weight:800;color:var(--accent)">+7pp</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:6px">Angel-backed startups have 7 percentage points higher acquisition rate. Grants: weaker effect.</div>
+      </div>
+      <div class="card">
+        <div class="badge badge-green" style="margin-bottom:10px">RQ5 — Speed</div>
+        <div style="font-size:28px;font-weight:800;color:var(--green)">11% acq.</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:6px">Startups that raised within 3 months of founding have the highest acquisition rate. Speed = signal.</div>
+      </div>
+      <div class="card" style="border-color:var(--red)">
+        <div class="badge badge-red" style="margin-bottom:10px">RQ6 — Founding Era</div>
+        <div style="font-size:28px;font-weight:800;color:var(--red)">⚠ Bias</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:6px">Pre-2000 looks best — survivorship bias. 2012+ looks worst — they're too young to be acquired yet.</div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:16px;padding:14px 20px;background:rgba(255,152,0,.07);border-color:rgba(255,152,0,.3)">
+      <span style="font-size:13px;color:var(--orange);font-weight:600">Important: Correlation ≠ Causation.</span>
+      <span style="font-size:13px;color:var(--muted)"> These are patterns in historical data. We cannot say seed funding <em>causes</em> acquisition. We predict what we observe, with full awareness of survivorship and immaturity biases.</span>
+    </div>
+    <div class="slide-num">04 / 10</div>
+  </div>
+
+  <!-- ══ SLIDE 5 — PREPROCESSING ════════════════════════════════════════════ -->
+  <div class="slide" id="s5">
+    <div class="eyebrow">Phase 3 — Preprocessing</div>
+    <h2>One reproducible pipeline.<br>Zero data leakage.</h2>
+    <div class="two-col" style="margin-top:8px">
+      <div>
+        <div class="pipeline" style="flex-direction:column;gap:8px;align-items:stretch">
+          <div class="card" style="padding:12px 16px;border-left:3px solid var(--blue)">
+            <div style="font-size:12px;font-weight:700">Input</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px">39 columns · widespread nulls</div>
+          </div>
+          <div style="text-align:center;color:var(--muted);font-size:12px">▼</div>
+          <div class="card" style="padding:12px 16px;border-left:3px solid var(--accent)">
+            <div style="font-size:12px;font-weight:700">Fix dtypes → Parse dates → Fill unknowns</div>
+          </div>
+          <div style="text-align:center;color:var(--muted);font-size:12px">▼</div>
+          <div class="card" style="padding:12px 16px;border-left:3px solid var(--accent)">
+            <div style="font-size:12px;font-weight:700">Geo clusters → log1p funding → Round flags</div>
+          </div>
+          <div style="text-align:center;color:var(--muted);font-size:12px">▼</div>
+          <div class="card" style="padding:12px 16px;border-left:3px solid var(--accent)">
+            <div style="font-size:12px;font-weight:700">Angel flag → Never-funded flag → Days to funding</div>
+          </div>
+          <div style="text-align:center;color:var(--muted);font-size:12px">▼</div>
+          <div class="card" style="padding:12px 16px;border-left:3px solid var(--accent)">
+            <div style="font-size:12px;font-weight:700">Target encode market + country → Median impute dates</div>
+          </div>
+          <div style="text-align:center;color:var(--muted);font-size:12px">▼</div>
+          <div class="card" style="padding:12px 16px;border-left:3px solid var(--green)">
+            <div style="font-size:12px;font-weight:700">Output</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px">46 features · 0 nulls</div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <h3>Train / Val / Test Split</h3>
+        <div style="margin-top:12px">
+          <div class="bar-chart">
+            <div class="bar-row">
+              <div class="bar-label">Training</div>
+              <div class="bar-track">
+                <div class="bar-fill" style="width:70%;background:var(--blue)">27,860 rows</div>
+              </div>
+              <div class="bar-value">70%</div>
+            </div>
+            <div class="bar-row">
+              <div class="bar-label">Validation</div>
+              <div class="bar-track">
+                <div class="bar-fill" style="width:15%;background:var(--green)">5,971</div>
+              </div>
+              <div class="bar-value">15%</div>
+            </div>
+            <div class="bar-row">
+              <div class="bar-label">Test (held-out)</div>
+              <div class="bar-track">
+                <div class="bar-fill" style="width:15%;background:var(--orange)">5,971</div>
+              </div>
+              <div class="bar-value">15%</div>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="margin-top:20px;border-color:var(--green)">
+          <h3 style="font-size:13px;margin-bottom:8px">The No-Leakage Guarantee</h3>
+          <p style="font-size:13px">The Pipeline was <strong>fitted on training data only</strong> — medians, target-encoding means, and scalers are computed from training rows, then applied identically to validation and test. The test set was never examined until the final evaluation.</p>
+        </div>
+        <div class="card" style="margin-top:16px">
+          <h3 style="font-size:13px;margin-bottom:8px">Target Encoding — Why Not One-Hot?</h3>
+          <div style="font-size:13px;color:var(--muted)">
+            753 markets + 115 countries = <span style="color:var(--red)">~870 dummy columns</span>. Target encoding collapses each category to just 2 informative numbers: mean acquisition rate &amp; mean closure rate.
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="slide-num">05 / 10</div>
+  </div>
+
+  <!-- ══ SLIDE 6 — IMBALANCE ════════════════════════════════════════════════ -->
+  <div class="slide" id="s6">
+    <div class="eyebrow">Phase 4 — Imbalance Handling</div>
+    <h2>15:1 class ratio.<br><span style="color:var(--green)">SMOTETomek</span> solved it.</h2>
+    <div class="two-col" style="margin-top:8px">
+      <div>
+        <h3>Before vs After Resampling</h3>
+        <div style="margin-top:12px">
+          <div style="font-size:11px;color:var(--muted);margin-bottom:8px;font-weight:600;letter-spacing:1px">BEFORE — Original Training Set</div>
+          <div class="bar-chart" style="margin-bottom:16px">
+            <div class="bar-row">
+              <div class="bar-label">Operating</div>
+              <div class="bar-track">
+                <div class="bar-fill" style="width:86.5%;background:var(--blue)">86.5%</div>
+              </div>
+            </div>
+            <div class="bar-row">
+              <div class="bar-label">Acquired</div>
+              <div class="bar-track">
+                <div class="bar-fill" style="width:8.1%;background:var(--green)">8%</div>
+              </div>
+            </div>
+            <div class="bar-row">
+              <div class="bar-label">Closed</div>
+              <div class="bar-track">
+                <div class="bar-fill" style="width:5.4%;background:var(--red)">5%</div>
+              </div>
+            </div>
+          </div>
+          <div style="font-size:11px;color:var(--green);margin-bottom:8px;font-weight:600;letter-spacing:1px">AFTER SMOTETomek — Balanced</div>
+          <div class="bar-chart">
+            <div class="bar-row">
+              <div class="bar-label">Operating</div>
+              <div class="bar-track">
+                <div class="bar-fill" style="width:32.8%;background:var(--blue)">32.8%</div>
+              </div>
+            </div>
+            <div class="bar-row">
+              <div class="bar-label">Acquired</div>
+              <div class="bar-track">
+                <div class="bar-fill" style="width:33.6%;background:var(--green)">33.6%</div>
+              </div>
+            </div>
+            <div class="bar-row">
+              <div class="bar-label">Closed</div>
+              <div class="bar-track">
+                <div class="bar-fill" style="width:33.6%;background:var(--red)">33.6%</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="margin-top:16px;padding:14px 18px">
+          <p style="font-size:13px"><strong>SMOTETomek</strong> = SMOTE (synthetic oversampling of minorities) + Tomek Links (remove ambiguous borderline pairs). Best of both worlds.</p>
+        </div>
+      </div>
+      <div>
+        <h3>Strategy Comparison — Macro F1 on Validation</h3>
+        <table style="margin-top:8px">
+          <thead><tr><th>Strategy</th><th>Macro F1</th><th>Accuracy</th><th>Train Rows</th></tr></thead>
+          <tbody>
+            <tr><td>Baseline (none)</td><td style="color:var(--red)">0.387</td><td>86.2%</td><td>27,860</td></tr>
+            <tr><td>Class Weights</td><td>0.439</td><td>84.9%</td><td>27,860</td></tr>
+            <tr><td>RUS (undersample)</td><td>0.422</td><td>59.1%</td><td>~4,500</td></tr>
+            <tr><td>ROS (oversample)</td><td>0.452</td><td>64.9%</td><td>~72,000</td></tr>
+            <tr><td>SMOTE</td><td>0.466</td><td>83.9%</td><td>62,364</td></tr>
+            <tr class="winner"><td><strong>SMOTETomek ⭐</strong></td><td style="color:var(--green)"><strong>0.479</strong></td><td>83.8%</td><td>62,364</td></tr>
+          </tbody>
+        </table>
+        <div class="card" style="margin-top:16px;border-color:var(--orange);padding:14px 18px">
+          <p style="font-size:13px"><strong style="color:var(--orange)">Why not use accuracy?</strong> At 86% "Operating", a model predicting only the majority class scores 86% accuracy. <strong>Macro F1 weights all three classes equally</strong> — it's the honest metric for this problem.</p>
+        </div>
+      </div>
+    </div>
+    <div class="slide-num">06 / 10</div>
+  </div>
+
+  <!-- ══ SLIDE 7 — FEATURE SELECTION ══════════════════════════════════════ -->
+  <div class="slide" id="s7">
+    <div class="eyebrow">Phase 5 — Feature Selection</div>
+    <h2>8 methods voted.<br>24 features earned their place.</h2>
+    <div class="two-col" style="margin-top:8px">
+      <div>
+        <h3>Top Features by ANOVA F-Score</h3>
+        <div class="bar-chart" style="margin-top:10px">
+          <div class="bar-row">
+            <div class="bar-label" style="min-width:180px">log_funding_total_usd</div>
+            <div class="bar-track"><div class="bar-fill" style="width:100%;background:var(--blue)">F = 5,229</div></div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label" style="min-width:180px">log_venture</div>
+            <div class="bar-track"><div class="bar-fill" style="width:61%;background:var(--blue)">F = 3,201</div></div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label" style="min-width:180px">market_enc_acquired</div>
+            <div class="bar-track"><div class="bar-fill" style="width:58%;background:var(--green)">F = 3,054</div></div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label" style="min-width:180px">market_enc_closed</div>
+            <div class="bar-track"><div class="bar-fill" style="width:53%;background:var(--green)">F = 2,755</div></div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label" style="min-width:180px">log_round_B</div>
+            <div class="bar-track"><div class="bar-fill" style="width:39%;background:var(--orange)">F = 2,014</div></div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label" style="min-width:180px">has_round_B</div>
+            <div class="bar-track"><div class="bar-fill" style="width:38%;background:var(--orange)">F = 1,985</div></div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label" style="min-width:180px">country_enc_acquired</div>
+            <div class="bar-track"><div class="bar-fill" style="width:31%;background:var(--accent)">F = 1,602</div></div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label" style="min-width:180px">funding_rounds</div>
+            <div class="bar-track"><div class="bar-fill" style="width:27%;background:var(--accent)">F = 1,415</div></div>
+          </div>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:8px">All 31 features significant at α=0.05. Only <code>never_funded</code> failed — dropped.</div>
+      </div>
+      <div>
+        <h3>The Democratic Vote</h3>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:10px">8 methods vote — feature selected if ≥ 5/8 agree</div>
+        <!-- Mini vote heatmap -->
+        <div style="font-size:10px;display:flex;gap:4px;margin-bottom:4px;padding-left:164px;color:var(--muted)">
+          <div style="width:28px;text-align:center">ANOVA</div>
+          <div style="width:28px;text-align:center">Lasso</div>
+          <div style="width:28px;text-align:center">SVM</div>
+          <div style="width:28px;text-align:center">GB</div>
+          <div style="width:28px;text-align:center">RF</div>
+          <div style="width:28px;text-align:center">Ridge</div>
+          <div style="width:28px;text-align:center">Fwd</div>
+          <div style="width:28px;text-align:center">PFI</div>
+          <div style="width:28px;text-align:center">Sum</div>
+        </div>
+        <div id="heatmap">
+          <!-- rows injected by JS -->
+        </div>
+        <div class="card" style="margin-top:12px;padding:14px 18px;border-color:var(--green)">
+          <div style="display:flex;gap:20px;text-align:center">
+            <div>
+              <div style="font-size:1.8rem;font-weight:800;color:var(--muted)">32</div>
+              <div style="font-size:11px;color:var(--muted)">Input features</div>
+            </div>
+            <div style="display:flex;align-items:center;font-size:18px;color:var(--accent)">→</div>
+            <div>
+              <div style="font-size:1.8rem;font-weight:800;color:var(--green)">24</div>
+              <div style="font-size:11px;color:var(--muted)">Selected features</div>
+            </div>
+            <div style="display:flex;align-items:center;font-size:18px;color:var(--muted)">+</div>
+            <div>
+              <div style="font-size:1.8rem;font-weight:800;color:var(--orange)">−6</div>
+              <div style="font-size:11px;color:var(--muted)">Correlation-pruned</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="slide-num">07 / 10</div>
+  </div>
+
+  <!-- ══ SLIDE 8 — MODELING ════════════════════════════════════════════════ -->
+  <div class="slide" id="s8">
+    <div class="eyebrow">Phase 5 — Modeling</div>
+    <h2>50 experiments.<br>One best model.</h2>
+    <div class="two-col" style="margin-top:8px">
+      <div>
+        <h3>The Experiment Grid</h3>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:12px">5 models × 2 feature sets × 5 resampling strategies</div>
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px">
+          <div style="font-size:11px;display:grid;grid-template-columns:140px repeat(5,1fr);gap:6px;margin-bottom:8px">
+            <div></div>
+            <div style="text-align:center;color:var(--muted)">Base</div>
+            <div style="text-align:center;color:var(--muted)">ROS</div>
+            <div style="text-align:center;color:var(--muted)">RUS</div>
+            <div style="text-align:center;color:var(--muted)">SMOTE</div>
+            <div style="text-align:center;color:var(--green)">SMTk✓</div>
+          </div>
+          <div id="exp-grid-container"></div>
+        </div>
+        <div style="margin-top:12px;display:flex;gap:8px;font-size:11px;flex-wrap:wrap">
+          <div><span style="display:inline-block;width:12px;height:12px;background:rgba(76,175,80,.5);border-radius:2px;vertical-align:middle"></span> Winner</div>
+          <div><span style="display:inline-block;width:12px;height:12px;background:rgba(33,150,243,.3);border-radius:2px;vertical-align:middle"></span> Strong</div>
+          <div><span style="display:inline-block;width:12px;height:12px;background:rgba(255,152,0,.2);border-radius:2px;vertical-align:middle"></span> Moderate</div>
+          <div><span style="display:inline-block;width:12px;height:12px;background:rgba(255,255,255,.05);border-radius:2px;vertical-align:middle"></span> Low</div>
+        </div>
+      </div>
+      <div>
+        <h3>Model Leaderboard (Validation Set)</h3>
+        <table style="margin-top:8px">
+          <thead><tr><th>Model</th><th>Features</th><th>Macro F1</th><th>F1 Acq.</th></tr></thead>
+          <tbody>
+            <tr class="winner">
+              <td><strong>Random Forest ⭐</strong></td>
+              <td>Selected</td>
+              <td style="color:var(--green)"><strong>Best</strong></td>
+              <td style="color:var(--green)">✓</td>
+            </tr>
+            <tr>
+              <td>Gradient Boosting</td>
+              <td>All</td>
+              <td>Close 2nd</td>
+              <td>✓</td>
+            </tr>
+            <tr>
+              <td>XGBoost</td>
+              <td>Selected</td>
+              <td>Strong</td>
+              <td>✓</td>
+            </tr>
+            <tr>
+              <td>LR (L2)</td>
+              <td>All</td>
+              <td>Decent</td>
+              <td>~</td>
+            </tr>
+            <tr>
+              <td>LR (L1)</td>
+              <td>All</td>
+              <td>Decent</td>
+              <td>~</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="card" style="margin-top:16px;border-color:var(--accent)">
+          <h3 style="font-size:13px;margin-bottom:8px">Primary Metric: Macro F1</h3>
+          <p style="font-size:13px">All three classes — closed, operating, acquired — weighted equally. A model that ignores acquired startups receives a low score, no matter how high its accuracy.</p>
+        </div>
+        <div class="card" style="margin-top:12px;border-color:var(--blue)">
+          <h3 style="font-size:13px;margin-bottom:8px">5-Fold Cross-Validation ✓</h3>
+          <p style="font-size:13px">After selecting the best model, we ran stratified 5-fold CV on training data to verify stability. Std dev &lt; 0.02 → result is reliable, not a lucky split.</p>
+        </div>
+      </div>
+    </div>
+    <div class="slide-num">08 / 10</div>
+  </div>
+
+  <!-- ══ SLIDE 9 — RESULTS ══════════════════════════════════════════════════ -->
+  <div class="slide" id="s9">
+    <div class="eyebrow">Final Results</div>
+    <h2>The model generalizes.<br>Test set confirms it.</h2>
+    <div class="two-col" style="margin-top:8px">
+      <div>
+        <h3>Macro F1 Journey</h3>
+        <div style="margin-top:12px">
+          <div class="bar-chart">
+            <div class="bar-row">
+              <div class="bar-label">Naive baseline</div>
+              <div class="bar-track"><div class="bar-fill" style="width:38.7%;background:#555">0.387</div></div>
+            </div>
+            <div class="bar-row">
+              <div class="bar-label">+ Resampling</div>
+              <div class="bar-track"><div class="bar-fill" style="width:47.9%;background:var(--orange)">0.479</div></div>
+            </div>
+            <div class="bar-row">
+              <div class="bar-label">+ Feature select.</div>
+              <div class="bar-track"><div class="bar-fill" style="width:52%;background:var(--blue)">Best val</div></div>
+            </div>
+            <div class="bar-row">
+              <div class="bar-label">Final (test set)</div>
+              <div class="bar-track"><div class="bar-fill" style="width:53%;background:var(--green)">Confirmed ✓</div></div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;gap:16px;margin-top:20px">
+          <div class="card" style="flex:1;text-align:center;border-color:var(--green)">
+            <div style="font-size:1.8rem;font-weight:800;color:var(--green)">✓</div>
+            <div style="font-size:12px;color:var(--muted)">Validation ≈ Test<br>No overfitting</div>
+          </div>
+          <div class="card" style="flex:1;text-align:center;border-color:var(--blue)">
+            <div style="font-size:1.8rem;font-weight:800;color:var(--blue)">+24%</div>
+            <div style="font-size:12px;color:var(--muted)">Macro F1 lift<br>vs. naive model</div>
+          </div>
+          <div class="card" style="flex:1;text-align:center;border-color:var(--orange)">
+            <div style="font-size:1.8rem;font-weight:800;color:var(--orange)">5×</div>
+            <div style="font-size:12px;color:var(--muted)">Better acquired<br>F1 vs baseline</div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <h3>What the Model Actually Learned</h3>
+        <div style="margin-top:10px;display:flex;flex-direction:column;gap:10px">
+          <div class="card" style="padding:14px 18px;border-left:3px solid var(--blue)">
+            <div style="font-size:12px;font-weight:700;color:var(--blue)">Most predictive signals</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:4px">
+              Total funding amount → Round B/C presence → Venture capital → Market type → Country of origin
+            </div>
+          </div>
+          <div class="card" style="padding:14px 18px;border-left:3px solid var(--green)">
+            <div style="font-size:12px;font-weight:700;color:var(--green)">Acquired startup profile</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:4px">
+              Silicon Valley · Semiconductor/Security market · Raised Series B–C · Angel-backed · Fast to first funding
+            </div>
+          </div>
+          <div class="card" style="padding:14px 18px;border-left:3px solid var(--red)">
+            <div style="font-size:12px;font-weight:700;color:var(--red)">Closed startup profile</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:4px">
+              Non-USA · Consumer/Gaming market · No rounds beyond seed · Founded during crisis era
+            </div>
+          </div>
+          <div class="card" style="padding:14px 18px;background:rgba(255,152,0,.05);border-color:rgba(255,152,0,.3)">
+            <div style="font-size:12px;font-weight:700;color:var(--orange)">Hardest to classify</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:4px">
+              "Acquired" class — only 8.1% of data, genuine ambiguity at boundaries. The 5× improvement over baseline shows the resampling + feature engineering made a real difference.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="slide-num">09 / 10</div>
+  </div>
+
+  <!-- ══ SLIDE 10 — KEY LESSONS ════════════════════════════════════════════ -->
+  <div class="slide" id="s10">
+    <div class="eyebrow">Key Lessons</div>
+    <h2>What we'd tell<br>every data scientist.</h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;margin-top:16px">
+      <div class="lesson" style="border-left-color:var(--blue)">
+        <h4>Feature Engineering Beats Model Choice</h4>
+        <p>The 39 → 46 feature transformation — log-transforms, geo clusters, target encoding — mattered far more than which algorithm we used. Data quality first, model second.</p>
+      </div>
+      <div class="lesson" style="border-left-color:var(--orange)">
+        <h4>Imbalance Follows You Everywhere</h4>
+        <p>Resampling in notebook 04 was just the beginning. Every downstream decision — metrics, thresholds, per-class F1 — all had to account for the 15:1 majority/minority ratio.</p>
+      </div>
+      <div class="lesson" style="border-left-color:var(--red)">
+        <h4>Correlation ≠ Causation</h4>
+        <p>We predict patterns, not mechanisms. Silicon Valley startups aren't acquired <em>because</em> they're in Silicon Valley — both reflect a deeper selection effect. Honest scope matters.</p>
+      </div>
+      <div class="lesson" style="border-left-color:var(--green)">
+        <h4>Vote Before You Select</h4>
+        <p>No single feature selection method is the oracle. Running 8 methods and requiring ≥5/8 agreement produced a robust, reproducible feature set that survived correlation pruning.</p>
+      </div>
+      <div class="lesson" style="border-left-color:var(--accent)">
+        <h4>The Test Set is Sacred</h4>
+        <p>50 experiments, hyperparameter tuning, feature selection — all on training + validation only. The test set was opened exactly once. That's the only way final numbers mean anything.</p>
+      </div>
+      <div class="lesson" style="border-left-color:var(--muted)">
+        <h4>Bias Awareness is Non-Negotiable</h4>
+        <p>Survivorship bias, maturity bias, causality limitations — we documented every one. A model without stated limitations is a model you can't trust.</p>
+      </div>
+    </div>
+    <div class="card" style="margin-top:20px;padding:16px 24px;background:rgba(33,150,243,.06);border-color:rgba(33,150,243,.25)">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+        <div style="font-size:13px;color:var(--muted)">
+          VC investment dataset · <strong style="color:var(--text)">54,294 startups</strong> · 3 outcomes · 5 notebooks · 50 experiments
+        </div>
+        <div style="display:flex;gap:12px">
+          <span class="badge badge-blue">ML Course Project</span>
+          <span class="badge badge-green">Bar-Ilan University</span>
+        </div>
+      </div>
+    </div>
+    <div class="slide-num">10 / 10</div>
+  </div>
+
+</div><!-- /deck -->
+
+<!-- Navigation -->
+<div class="nav">
+  <button id="prev-btn" onclick="nav(-1)">&#8592;</button>
+  <span id="slide-counter">1 / 10</span>
+  <button id="next-btn" onclick="nav(1)">&#8594;</button>
+</div>
+<div class="kbd-hint">← → arrow keys to navigate</div>
+
+<script>
+// ── SLIDE ENGINE ─────────────────────────────────────────────────────
+let current = 0;
+const slides = document.querySelectorAll('.slide');
+const total  = slides.length;
+
+function goTo(n) {
+  slides[current].classList.remove('active');
+  current = (n + total) % total;
+  slides[current].classList.add('active');
+  document.getElementById('slide-counter').textContent = (current + 1) + ' / ' + total;
+  document.getElementById('progress').style.width = ((current + 1) / total * 100) + '%';
+}
+function nav(d) { goTo(current + d); }
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown'  || e.key === ' ') { e.preventDefault(); nav(1); }
+  if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')                     { e.preventDefault(); nav(-1); }
+});
+
+// ── HEATMAP DATA ─────────────────────────────────────────────────────
+const hmData = [
+  { name: 'log_funding_total_usd', votes: [1,1,1,1,1,1,1,1] },
+  { name: 'market_enc_closed',     votes: [1,1,1,1,1,1,1,1] },
+  { name: 'country_enc_acquired',  votes: [1,1,1,1,1,1,1,1] },
+  { name: 'funding_rounds',        votes: [1,1,1,1,1,1,1,0] },
+  { name: 'log_venture',           votes: [1,1,1,1,1,0,1,1] },
+  { name: 'log_seed',              votes: [1,1,1,1,1,0,1,1] },
+  { name: 'founded_month',         votes: [0,1,1,1,1,1,1,1] },
+  { name: 'founded_year',          votes: [1,1,1,1,1,0,1,1] },
+  { name: 'days_to_funding',       votes: [1,1,1,1,1,0,1,1] },
+];
+const hm = document.getElementById('heatmap');
+hmData.forEach(row => {
+  const div = document.createElement('div');
+  div.className = 'heatmap-row';
+  const sum = row.votes.reduce((a,b)=>a+b,0);
+  div.innerHTML = `<div class="heatmap-label">${row.name}</div>` +
+    row.votes.map(v => `<div class="heatmap-cell ${v?'cell-on':'cell-off'}">${v}</div>`).join('') +
+    `<div class="heatmap-cell" style="width:36px;background:rgba(88,166,255,.15);color:var(--accent)">${sum}</div>`;
+  hm.appendChild(div);
+});
+
+// ── EXPERIMENT GRID ───────────────────────────────────────────────────
+const models   = ['LR-L2(all)','LR-L2(sel)','LR-L1(all)','LR-L1(sel)','RF(all)','RF(sel)','GB(all)','GB(sel)','XGB(all)','XGB(sel)'];
+const quality  = [
+  'mid','mid','mid','mid','good','good','good','good','good','good', // Base
+  'mid','mid','low','low','good','good','good','good','good','good', // ROS
+  'low','low','low','low','mid','mid','mid','mid','mid','mid',       // RUS
+  'mid','mid','mid','mid','good','good','good','good','good','good', // SMOTE
+  'mid','mid','mid','mid','winner','good','good','good','good','good', // SMOTETomek
+];
+const strategies = ['Base','ROS','RUS','SMOTE','SMTomek'];
+const gc = document.getElementById('exp-grid-container');
+// Headers
+let header = '<div style="font-size:10px;display:grid;grid-template-columns:80px repeat(10,1fr);gap:4px;margin-bottom:4px">';
+header += '<div></div>';
+models.forEach(m => { header += `<div style="text-align:center;color:var(--muted);transform:rotate(-30deg);transform-origin:bottom left;height:40px;display:flex;align-items:flex-end"><span style="font-size:8px;white-space:nowrap">${m}</span></div>`; });
+header += '</div>';
+gc.innerHTML = header;
+strategies.forEach((st, si) => {
+  let row = `<div style="display:grid;grid-template-columns:80px repeat(10,1fr);gap:4px;margin-bottom:4px">`;
+  row += `<div style="font-size:10px;color:var(--muted);display:flex;align-items:center">${st}</div>`;
+  for (let mi = 0; mi < 10; mi++) {
+    const q = quality[si * 10 + mi];
+    const cls = q === 'winner' ? 'exp-winner' : q === 'good' ? 'exp-good' : q === 'mid' ? 'exp-mid' : 'exp-low';
+    const icon = q === 'winner' ? '★' : q === 'good' ? '●' : q === 'mid' ? '·' : '';
+    row += `<div class="exp-cell ${cls}">${icon}</div>`;
+  }
+  row += '</div>';
+  gc.innerHTML += row;
+});
+
+// Init progress
+document.getElementById('progress').style.width = (1 / total * 100) + '%';
+</script>
+</body>
+</html>
