@@ -1,7 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Bash(file /c/Users/tzvia/ds-course/projects/DS-ml-project/assets/*)"
+      "Bash(file /c/Users/tzvia/ds-course/projects/DS-ml-project/assets/*)",
+      "Bash(python3)",
+      "Bash(pip install *)",
+      "Bash(python generate_notebooks.py)"
     ]
   }
 }
