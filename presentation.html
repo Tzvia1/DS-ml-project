@@ -293,6 +293,22 @@
   .lesson h4 { font-size: 14px; font-weight: 700; margin-bottom: 8px; }
   .lesson p  { font-size: 13px; color: var(--muted); line-height: 1.6; max-width: none; }
 
+  /* ── SORTABLE TABLE ──────────────────────────────────── */
+  .sortable-th {
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+    transition: color .2s;
+  }
+  .sortable-th:hover { color: var(--accent); }
+  .sortable-th.sort-asc  { color: var(--accent); }
+  .sortable-th.sort-desc { color: var(--accent); }
+  .sortable-th.sort-asc  .sort-icon::after { content: ' ↑'; }
+  .sortable-th.sort-desc .sort-icon::after { content: ' ↓'; }
+  .sort-icon { font-size: 10px; color: var(--muted); }
+  .sortable-th.sort-asc  .sort-icon,
+  .sortable-th.sort-desc .sort-icon { color: var(--accent); }
+
   /* ── SLIDE NUMBERS ───────────────────────────────────── */
   .slide-num {
     position: absolute;
@@ -362,6 +378,12 @@
       <div class="eyebrow">Machine Learning · Startup Analytics</div>
       <h1>Can We Predict<br>Which Startups<br><span style="color:var(--accent)">Win?</span></h1>
       <p class="hero-sub">A data-driven investigation into 54,294 startups — finding the signals that separate acquired, operating, and closed companies.</p>
+      <div style="margin-bottom:28px;display:flex;align-items:center;gap:10px">
+        <span style="font-size:11px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--muted)">By</span>
+        <span style="font-size:15px;font-weight:600;color:var(--text)">Efrat Kleiman</span>
+        <span style="color:var(--border)">·</span>
+        <span style="font-size:15px;font-weight:600;color:var(--text)">Tzvia Harshtein</span>
+      </div>
       <div class="stat-row">
         <div class="stat-card">
           <div class="num" style="color:var(--blue)">54K</div>
@@ -381,7 +403,7 @@
         </div>
       </div>
     </div>
-    <div class="slide-num">01 / 10</div>
+    <div class="slide-num">01 / 11</div>
   </div>
 
   <!-- ══ SLIDE 2 — THE PROBLEM ════════════════════════════════════════════ -->
@@ -459,7 +481,7 @@
         </div>
       </div>
     </div>
-    <div class="slide-num">02 / 10</div>
+    <div class="slide-num">02 / 11</div>
   </div>
 
   <!-- ══ SLIDE 3 — THE DATA ════════════════════════════════════════════════ -->
@@ -503,7 +525,7 @@
         <h3>6 Key Engineering Decisions</h3>
         <div style="display:flex;flex-direction:column;gap:10px;margin-top:8px">
           <div class="card" style="padding:14px 18px">
-            <div style="font-size:13px"><span style="color:var(--accent);font-weight:700">753 markets, 115 countries</span> → target encoding (mean acquisition rate per category)</div>
+            <div style="font-size:13px"><span style="color:var(--accent);font-weight:700">753 markets, 115 countries</span> → combined into <span style="color:var(--green);font-weight:700">50 groups</span>, then target encoding (mean acquisition rate per category)</div>
           </div>
           <div class="card" style="padding:14px 18px">
             <div style="font-size:13px"><span style="color:var(--accent);font-weight:700">Geography</span> → 7 clusters: Silicon Valley, NY, Boston, Seattle, LA, USA-Other, Non-USA</div>
@@ -531,7 +553,7 @@
         </div>
       </div>
     </div>
-    <div class="slide-num">03 / 10</div>
+    <div class="slide-num">03 / 11</div>
   </div>
 
   <!-- ══ SLIDE 4 — RESEARCH QUESTIONS ══════════════════════════════════════ -->
@@ -574,7 +596,7 @@
       <span style="font-size:13px;color:var(--orange);font-weight:600">Important: Correlation ≠ Causation.</span>
       <span style="font-size:13px;color:var(--muted)"> These are patterns in historical data. We cannot say seed funding <em>causes</em> acquisition. We predict what we observe, with full awareness of survivorship and immaturity biases.</span>
     </div>
-    <div class="slide-num">04 / 10</div>
+    <div class="slide-num">04 / 11</div>
   </div>
 
   <!-- ══ SLIDE 5 — PREPROCESSING ════════════════════════════════════════════ -->
@@ -598,7 +620,7 @@
           </div>
           <div style="text-align:center;color:var(--muted);font-size:12px">▼</div>
           <div class="card" style="padding:12px 16px;border-left:3px solid var(--accent)">
-            <div style="font-size:12px;font-weight:700">Angel flag → Never-funded flag → Days to funding</div>
+            <div style="font-size:12px;font-weight:700">Angel flag → Days to funding</div>
           </div>
           <div style="text-align:center;color:var(--muted);font-size:12px">▼</div>
           <div class="card" style="padding:12px 16px;border-left:3px solid var(--accent)">
@@ -650,7 +672,7 @@
         </div>
       </div>
     </div>
-    <div class="slide-num">05 / 10</div>
+    <div class="slide-num">05 / 11</div>
   </div>
 
   <!-- ══ SLIDE 6 — IMBALANCE ════════════════════════════════════════════════ -->
@@ -726,11 +748,64 @@
         </div>
       </div>
     </div>
-    <div class="slide-num">06 / 10</div>
+    <div class="slide-num">06 / 11</div>
+  </div>
+
+  <!-- ══ SLIDE 7 — MODEL COMPARISON ══════════════════════════════════════════ -->
+  <div class="slide" id="s7">
+    <div class="eyebrow">Phase 4 — Model Comparison</div>
+    <h2>5 Models × 4 Strategies.<br><span style="color:var(--green)">Every experiment, one table.</span></h2>
+    <div style="margin-top:12px;overflow-x:auto">
+      <table id="model-table" style="font-size:11.5px;width:100%">
+        <thead>
+          <tr>
+            <th data-col="0" data-type="str"  class="sortable-th">Model <span class="sort-icon">⇅</span></th>
+            <th data-col="1" data-type="str"  class="sortable-th">Resample <span class="sort-icon">⇅</span></th>
+            <th data-col="2" data-type="num"  class="sortable-th">Accuracy <span class="sort-icon">⇅</span></th>
+            <th data-col="3" data-type="num"  class="sortable-th">Macro F1 <span class="sort-icon">⇅</span></th>
+            <th data-col="4" data-type="num"  class="sortable-th">Macro Prec <span class="sort-icon">⇅</span></th>
+            <th data-col="5" data-type="num"  class="sortable-th">Macro Recall <span class="sort-icon">⇅</span></th>
+            <th data-col="6" data-type="num"  class="sortable-th">F1 Closed <span class="sort-icon">⇅</span></th>
+            <th data-col="7" data-type="num"  class="sortable-th">F1 Operating <span class="sort-icon">⇅</span></th>
+            <th data-col="8" data-type="num"  class="sortable-th">F1 Acquired <span class="sort-icon">⇅</span></th>
+          </tr>
+        </thead>
+        <tbody id="model-table-body">
+          <tr data-winner="true"><td data-val="LR (L2)">LR (L2)</td><td data-val="ROS"><span class="badge badge-blue">ROS</span></td><td data-val="0.459">45.9%</td><td data-val="0.341">0.341</td><td data-val="0.398">0.398</td><td data-val="0.523">0.523</td><td data-val="0.150">0.150</td><td data-val="0.597">0.597</td><td data-val="0.274">0.274</td></tr>
+          <tr><td data-val="LR (L1)">LR (L1)</td><td data-val="ROS"><span class="badge badge-blue">ROS</span></td><td data-val="0.459">45.9%</td><td data-val="0.339">0.339</td><td data-val="0.397">0.397</td><td data-val="0.519">0.519</td><td data-val="0.147">0.147</td><td data-val="0.597">0.597</td><td data-val="0.273">0.273</td></tr>
+          <tr><td data-val="Random Forest">Random Forest</td><td data-val="ROS"><span class="badge badge-blue">ROS</span></td><td data-val="0.584">58.4%</td><td data-val="0.394">0.394</td><td data-val="0.407">0.407</td><td data-val="0.523">0.523</td><td data-val="0.171">0.171</td><td data-val="0.723">0.723</td><td data-val="0.289">0.289</td></tr>
+          <tr><td data-val="Gradient Boosting">Gradient Boosting</td><td data-val="ROS"><span class="badge badge-blue">ROS</span></td><td data-val="0.559">55.9%</td><td data-val="0.383">0.383</td><td data-val="0.404">0.404</td><td data-val="0.521">0.521</td><td data-val="0.159">0.159</td><td data-val="0.701">0.701</td><td data-val="0.288">0.288</td></tr>
+          <tr><td data-val="XGBoost">XGBoost</td><td data-val="ROS"><span class="badge badge-blue">ROS</span></td><td data-val="0.530">53.0%</td><td data-val="0.376">0.376</td><td data-val="0.406">0.406</td><td data-val="0.538">0.538</td><td data-val="0.165">0.165</td><td data-val="0.669">0.669</td><td data-val="0.293">0.293</td></tr>
+          <tr><td data-val="LR (L2)">LR (L2)</td><td data-val="RUS"><span class="badge badge-orange">RUS</span></td><td data-val="0.415">41.5%</td><td data-val="0.319">0.319</td><td data-val="0.393">0.393</td><td data-val="0.517">0.517</td><td data-val="0.144">0.144</td><td data-val="0.545">0.545</td><td data-val="0.269">0.269</td></tr>
+          <tr><td data-val="LR (L1)">LR (L1)</td><td data-val="RUS"><span class="badge badge-orange">RUS</span></td><td data-val="0.424">42.4%</td><td data-val="0.323">0.323</td><td data-val="0.394">0.394</td><td data-val="0.518">0.518</td><td data-val="0.144">0.144</td><td data-val="0.556">0.556</td><td data-val="0.269">0.269</td></tr>
+          <tr><td data-val="Random Forest">Random Forest</td><td data-val="RUS"><span class="badge badge-orange">RUS</span></td><td data-val="0.460">46.0%</td><td data-val="0.345">0.345</td><td data-val="0.402">0.402</td><td data-val="0.542">0.542</td><td data-val="0.167">0.167</td><td data-val="0.595">0.595</td><td data-val="0.274">0.274</td></tr>
+          <tr><td data-val="Gradient Boosting">Gradient Boosting</td><td data-val="RUS"><span class="badge badge-orange">RUS</span></td><td data-val="0.468">46.8%</td><td data-val="0.345">0.345</td><td data-val="0.399">0.399</td><td data-val="0.523">0.523</td><td data-val="0.147">0.147</td><td data-val="0.607">0.607</td><td data-val="0.281">0.281</td></tr>
+          <tr><td data-val="XGBoost">XGBoost</td><td data-val="RUS"><span class="badge badge-orange">RUS</span></td><td data-val="0.466">46.6%</td><td data-val="0.347">0.347</td><td data-val="0.402">0.402</td><td data-val="0.537">0.537</td><td data-val="0.157">0.157</td><td data-val="0.603">0.603</td><td data-val="0.282">0.282</td></tr>
+          <tr><td data-val="LR (L2)">LR (L2)</td><td data-val="SMOTE"><span class="badge badge-red">SMOTE</span></td><td data-val="0.481">48.1%</td><td data-val="0.350">0.350</td><td data-val="0.398">0.398</td><td data-val="0.521">0.521</td><td data-val="0.151">0.151</td><td data-val="0.621">0.621</td><td data-val="0.276">0.276</td></tr>
+          <tr><td data-val="LR (L1)">LR (L1)</td><td data-val="SMOTE"><span class="badge badge-red">SMOTE</span></td><td data-val="0.480">48.0%</td><td data-val="0.349">0.349</td><td data-val="0.398">0.398</td><td data-val="0.519">0.519</td><td data-val="0.150">0.150</td><td data-val="0.621">0.621</td><td data-val="0.276">0.276</td></tr>
+          <tr><td data-val="Random Forest">Random Forest</td><td data-val="SMOTE"><span class="badge badge-red">SMOTE</span></td><td data-val="0.744">74.4%</td><td data-val="0.415">0.415</td><td data-val="0.406">0.406</td><td data-val="0.436">0.436</td><td data-val="0.142">0.142</td><td data-val="0.853">0.853</td><td data-val="0.249">0.249</td></tr>
+          <tr><td data-val="Gradient Boosting">Gradient Boosting</td><td data-val="SMOTE"><span class="badge badge-red">SMOTE</span></td><td data-val="0.855">85.5%</td><td data-val="0.366">0.366</td><td data-val="0.440">0.440</td><td data-val="0.363">0.363</td><td data-val="0.022">0.022</td><td data-val="0.922">0.922</td><td data-val="0.154">0.154</td></tr>
+          <tr><td data-val="XGBoost">XGBoost</td><td data-val="SMOTE"><span class="badge badge-red">SMOTE</span></td><td data-val="0.849">84.9%</td><td data-val="0.381">0.381</td><td data-val="0.438">0.438</td><td data-val="0.373">0.373</td><td data-val="0.036">0.036</td><td data-val="0.919">0.919</td><td data-val="0.187">0.187</td></tr>
+          <tr><td data-val="LR (L2)">LR (L2)</td><td data-val="SMOTETomek"><span class="badge badge-green">SMOTETomek</span></td><td data-val="0.460">46.0%</td><td data-val="0.340">0.340</td><td data-val="0.397">0.397</td><td data-val="0.517">0.517</td><td data-val="0.146">0.146</td><td data-val="0.599">0.599</td><td data-val="0.274">0.274</td></tr>
+          <tr><td data-val="LR (L1)">LR (L1)</td><td data-val="SMOTETomek"><span class="badge badge-green">SMOTETomek</span></td><td data-val="0.464">46.4%</td><td data-val="0.343">0.343</td><td data-val="0.398">0.398</td><td data-val="0.522">0.522</td><td data-val="0.150">0.150</td><td data-val="0.603">0.603</td><td data-val="0.275">0.275</td></tr>
+          <tr><td data-val="Random Forest">Random Forest</td><td data-val="SMOTETomek"><span class="badge badge-green">SMOTETomek</span></td><td data-val="0.737">73.7%</td><td data-val="0.419">0.419</td><td data-val="0.408">0.408</td><td data-val="0.445">0.445</td><td data-val="0.147">0.147</td><td data-val="0.848">0.848</td><td data-val="0.262">0.262</td></tr>
+          <tr><td data-val="Gradient Boosting">Gradient Boosting</td><td data-val="SMOTETomek"><span class="badge badge-green">SMOTETomek</span></td><td data-val="0.853">85.3%</td><td data-val="0.372">0.372</td><td data-val="0.439">0.439</td><td data-val="0.368">0.368</td><td data-val="0.022">0.022</td><td data-val="0.921">0.921</td><td data-val="0.172">0.172</td></tr>
+          <tr class="winner"><td data-val="XGBoost"><strong>XGBoost ⭐</strong></td><td data-val="SMOTETomek"><span class="badge badge-green">SMOTETomek</span></td><td data-val="0.847">84.7%</td><td data-val="0.389" style="color:var(--green)"><strong>0.389</strong></td><td data-val="0.432">0.432</td><td data-val="0.381">0.381</td><td data-val="0.025">0.025</td><td data-val="0.917">0.917</td><td data-val="0.223">0.223</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="card" style="margin-top:14px;padding:12px 20px;background:rgba(33,150,243,.06);border-color:rgba(33,150,243,.25)">
+      <div style="display:flex;gap:32px;flex-wrap:wrap;font-size:12px;color:var(--muted)">
+        <span><strong style="color:var(--text)">Best Macro F1:</strong> XGBoost + SMOTETomek → <span style="color:var(--green)">0.389</span></span>
+        <span><strong style="color:var(--text)">Metric:</strong> Macro F1 weights all 3 classes equally — honest for imbalanced data</span>
+        <span><strong style="color:var(--text)">20 experiments</strong> across 5 models × 4 resampling strategies</span>
+      </div>
+    </div>
+    <div class="slide-num">07 / 11</div>
   </div>
 
   <!-- ══ SLIDE 7 — FEATURE SELECTION ══════════════════════════════════════ -->
-  <div class="slide" id="s7">
+  <div class="slide" id="s8">
     <div class="eyebrow">Phase 5 — Feature Selection</div>
     <h2>8 methods voted.<br>24 features earned their place.</h2>
     <div class="two-col" style="margin-top:8px">
@@ -810,11 +885,11 @@
         </div>
       </div>
     </div>
-    <div class="slide-num">07 / 10</div>
+    <div class="slide-num">08 / 11</div>
   </div>
 
   <!-- ══ SLIDE 8 — MODELING ════════════════════════════════════════════════ -->
-  <div class="slide" id="s8">
+  <div class="slide" id="s9">
     <div class="eyebrow">Phase 5 — Modeling</div>
     <h2>50 experiments.<br>One best model.</h2>
     <div class="two-col" style="margin-top:8px">
@@ -886,11 +961,11 @@
         </div>
       </div>
     </div>
-    <div class="slide-num">08 / 10</div>
+    <div class="slide-num">09 / 11</div>
   </div>
 
   <!-- ══ SLIDE 9 — RESULTS ══════════════════════════════════════════════════ -->
-  <div class="slide" id="s9">
+  <div class="slide" id="s10">
     <div class="eyebrow">Final Results</div>
     <h2>The model generalizes.<br>Test set confirms it.</h2>
     <div class="two-col" style="margin-top:8px">
@@ -961,11 +1036,11 @@
         </div>
       </div>
     </div>
-    <div class="slide-num">09 / 10</div>
+    <div class="slide-num">10 / 11</div>
   </div>
 
   <!-- ══ SLIDE 10 — KEY LESSONS ════════════════════════════════════════════ -->
-  <div class="slide" id="s10">
+  <div class="slide" id="s11">
     <div class="eyebrow">Key Lessons</div>
     <h2>What we'd tell<br>every data scientist.</h2>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;margin-top:16px">
@@ -1005,7 +1080,7 @@
         </div>
       </div>
     </div>
-    <div class="slide-num">10 / 10</div>
+    <div class="slide-num">11 / 11</div>
   </div>
 
 </div><!-- /deck -->
@@ -1013,7 +1088,7 @@
 <!-- Navigation -->
 <div class="nav">
   <button id="prev-btn" onclick="nav(-1)">&#8592;</button>
-  <span id="slide-counter">1 / 10</span>
+  <span id="slide-counter">1 / 11</span>
   <button id="next-btn" onclick="nav(1)">&#8594;</button>
 </div>
 <div class="kbd-hint">← → arrow keys to navigate</div>
@@ -1090,6 +1165,55 @@ strategies.forEach((st, si) => {
   row += '</div>';
   gc.innerHTML += row;
 });
+
+// ── SORTABLE TABLE ────────────────────────────────────────────────────
+(function() {
+  let sortCol = -1, sortAsc = true;
+
+  document.querySelectorAll('.sortable-th').forEach(th => {
+    th.addEventListener('click', function(e) {
+      e.stopPropagation();
+      const col  = parseInt(this.dataset.col);
+      const type = this.dataset.type;
+
+      if (sortCol === col) {
+        sortAsc = !sortAsc;
+      } else {
+        sortCol = col;
+        sortAsc = true;
+      }
+
+      // Update header styles
+      document.querySelectorAll('.sortable-th').forEach(h => {
+        h.classList.remove('sort-asc', 'sort-desc');
+        h.querySelector('.sort-icon').textContent = '⇅';
+      });
+      this.classList.add(sortAsc ? 'sort-asc' : 'sort-desc');
+      this.querySelector('.sort-icon').textContent = '';
+
+      // Sort rows
+      const tbody = document.getElementById('model-table-body');
+      const rows  = Array.from(tbody.querySelectorAll('tr'));
+
+      rows.sort((a, b) => {
+        const aCell = a.querySelectorAll('td')[col];
+        const bCell = b.querySelectorAll('td')[col];
+        const aVal  = aCell ? aCell.dataset.val : '';
+        const bVal  = bCell ? bCell.dataset.val : '';
+
+        let cmp;
+        if (type === 'num') {
+          cmp = parseFloat(aVal) - parseFloat(bVal);
+        } else {
+          cmp = aVal.localeCompare(bVal);
+        }
+        return sortAsc ? cmp : -cmp;
+      });
+
+      rows.forEach(r => tbody.appendChild(r));
+    });
+  });
+})();
 
 // Init progress
 document.getElementById('progress').style.width = (1 / total * 100) + '%';

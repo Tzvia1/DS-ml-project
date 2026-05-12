@@ -46,7 +46,7 @@ seed       ░░▒▒███████████████████
 |---|---------------|---------------|
 | 1 | **15K+ rows missing founding date** | Median imputation per column (year / month / quarter) |
 | 2 | **Geography dominated by USA** | Silicon Valley, NY, Boston, Seattle, LA → 7 named clusters |
-| 3 | **753 markets, 115 countries** | One-hot encoding impractical → target encoding (mean acquisition rate) |
+| 3 | **753 markets, 115 countries** | One-hot encoding impractical → map markets → target encoding (mean acquisition rate) |
 | 4 | **`funding_total_usd` vs `rounds_sum` mismatch** | Cross-referenced to separate true zeros from missing data |
 | 5 | **Round amount columns mostly zeros** | Converted to binary flags: `has_round_A / B / C` |
 | 6 | **Rounds D–H each below 3% participation** | Too sparse individually → collapsed to `round_D_plus` |
@@ -85,9 +85,9 @@ Every decision from the EDA was translated into a step in a reproducible sklearn
 flowchart LR
     IN["39 cols nulls everywhere"] --> P1["Fix dtypes"] --> P2["Parse dates"] --> P3["Fill unknowns"]
     P3 --> P4["Geo clusters"] --> P5["log1p funding"] --> P6["Round flags"]
-    P6 --> P7["Angel flag"] --> P8["Never-funded flag"] --> P9["Days to funding"]
-    P9 --> P10["Target encode"] --> P11["Median impute dates"] --> P12["Drop raw cols"]
-    P12 --> OUT["46 features 0 nulls"]
+    P6 --> P7["Angel flag"]  --> P8["Days to funding"]
+    P8 --> P9["Target encode"] --> P10["Median impute dates"] --> P11["Drop raw cols"]
+    P11 --> OUT["46 features 0 nulls"]
 ```
 
 | Split | Rows | Share |
